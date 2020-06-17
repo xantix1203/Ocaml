@@ -1,0 +1,150 @@
+type table = int array;;
+
+let vider table = table.(0) <- 0 ;;
+
+let ajouter table x =
+  begin table.(table.(0) + 1) <- x ;
+  table.(0) <- table.(0) + 1;
+  end;;
+
+let concatener table1 table2 =
+  for i = 1 to table2.(0)
+  do
+    table1.(table1.(0) + i) <- table2.(i);
+  done;
+  table1.(0) <- table1.(0) + table2.(0);;
+
+let max_val = 99;;
+
+let compter table = let t = Array.make (max_val + 1) 0 in
+  for i = 1 to table.(0)
+  do
+    t.(table.(i)) <- t.(table.(i)) + 1;
+  done;
+  t;;
+
+let tri_simple table = let t = compter table in
+  let k = ref 1 in
+    for i = 0 to max_val
+    do
+      for j = 0 to t.(i) - 1
+      do
+        table.(!k) <- i;
+        k := !k + 1;
+      done;
+    done;;
+
+(*la complexité de ce tri est un O(n + maxval) ou n est la taille de la table*)
+
+let max_valeurs table = let maxi = ref table.(1) in
+  if table.(0) = 0
+  then begin
+    maxi := -1;
+  end
+  else begin
+    for i = 1 to table.(0)
+    do
+      if table.(i) > !maxi
+      then begin
+        maxi := table.(i);
+      end;
+    done;
+  end;
+  !maxi;;
+
+let nombre_chiffres n = int_of_float (log10 (float_of_int n)) + 1;;
+
+let max_chiffres table = nombre_chiffres (max_valeurs table);;
+
+let rec exp_rapide x n = match n with
+  |0 -> 1
+  |1 -> x
+  |n when((n mod 2) = 0) -> (exp_rapide x (n/2)) * (exp_rapide x (n/2))
+  |_ -> x * (exp_rapide x (n/2)) * (exp_rapide x (n/2));;
+
+(*on divise environ n par 2 à chaque itération de la fonction sa complexité est donc en log2(n)*)
+
+let puiss10 p = exp_rapide 10 p;;
+
+let chiffre_de_rang r n = (n / (puiss10 (r - 1))) - (10 * (n / (puiss10 r)));;
+
+let distribuer table r baquets =
+  for i = 0 to 9
+  do
+    baquets.(i).(0) <- 0;
+  done;
+  for i = 1 to table.(0)
+  do
+    let chiffre = (chiffre_de_rang r (table.(i))) in
+      baquets.(chiffre).((baquets.(chiffre).(0)) + 1) <- table.(i);
+      baquets.(chiffre).(0) <- ((baquets.(chiffre).(0)) + 1);
+  done;;
+
+let tri_baquets table =
+  let baquets = Array.make_matrix 10 (table.(0) + 1) 0 in
+    for r = 1 to max_chiffres table
+    do
+      distribuer table r baquets;
+      let j = ref 1 in
+        for k = 0 to 9
+        do
+          for l = 1 to (baquets.(k).(0))
+          do
+            table.(!j) <- (baquets.(k).(l));
+            j := !j + 1;
+          done;
+        done;
+    done;;
+
+(* la complexité de cette implémentation du tri par baquets a une complexité égale à O(maxc * C(distribuer)) = O(maxc * n)
+Si on doit trier de petits nombres redondants l'algorithme a une complexité linéaire ce qui le rend performant au regard des autres
+algorithmes de tri, sinon, si les nombres sont tous différents,
+il a une complexité qui est supérieure à O(n^2) ce qui le rend moins rapide que le tri fusion *)
+
+let distribuer_bis table r indice_debut baquets garage =
+  for i = 0 to 9
+  do
+    baquets.(i).(0) <- 0;
+  done;
+  for i = indice_debut to table.(0)
+  do
+    let chiffre = (chiffre_de_rang r (table.(i))) in
+      if ((chiffre = 0) && (r > (nombre_chiffres (table.(i)))))
+      then begin
+        garage.(0) <- (garage.(0) + 1);
+        garage.(garage.(0)) <- table.(i);
+      end
+      else begin
+      baquets.(chiffre).((baquets.(chiffre).(0)) + 1) <- table.(i);
+      baquets.(chiffre).(0) <- ((baquets.(chiffre).(0)) + 1);
+      end;
+  done;;
+
+let tri_baquets_bis table =
+  let baquets = Array.make_matrix 10 (table.(0) + 1) 0 in
+    let garage = Array.make (table.(0) + 1) 0 in
+      let garage0 = ref garage.(0) in
+        let r = ref 1 in
+          while garage.(0) < table.(0)
+          do
+            distribuer_bis table !r (garage.(0) + 1) baquets garage;
+            let j = ref (!garage0 + 1) in
+              for k = (!garage0 + 1) to garage.(0)
+              do
+                table.(k) <- garage.(k);
+                j := !j + 1;
+              done;
+              for k = 0 to 9
+              do
+                for l = 1 to (baquets.(k).(0))
+                do
+                  table.(!j) <- (baquets.(k).(l));
+                  j := !j + 1;
+                done;
+              done;
+              r := !r + 1
+          done;;
+
+let t = [|6; 46; 9; 43; 23; 1; 6|];;
+tri_baquets_bis t;;
+t;;

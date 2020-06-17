@@ -1,0 +1,26 @@
+let rec longueur l = match l with
+  | [] -> 0
+  | t::q -> longueur q + 1 ;;
+
+let sous_liste l k long =
+  let rec sous_listeacc l k acc =  match l with
+    | l when(k = 0) -> l
+    | t::q when(acc >= k) -> q
+    | t::q -> sous_listeacc q k (acc + 1)
+    |_ -> failwith("erreur")
+  in sous_listeacc (List.rev((sous_listeacc (List.rev l) (longueur l - (long + k)) 1))) k 1;;
+
+let estCarre w =
+  let l = (longueur w) in
+    if (l mod 2) = 0
+    then
+      begin
+      (((sous_liste w 0 (l / 2)) = (sous_liste w (l/2) (l/2)))) ;
+      end
+    else false ;;
+
+
+let t = [1; 2; 1; 2] ;;
+longueur t;;
+sous_liste t 0 2 ;;
+estCarre t;;

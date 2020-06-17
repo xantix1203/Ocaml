@@ -1,0 +1,56 @@
+type poids = Infini | Poids of int ;;
+type poids_matrix = poids array array ;;
+
+let somme p1 p2 = match (p1, p2) with
+  | (Infini, _) -> Infini
+  | (_, Infini) -> Infini
+  | (Poids(p1'), Poids(p2')) -> Poids(p1' + p2') ;;
+
+let comp p1 p2 = match (p1, p2) with
+  | (Infini, _) -> false
+  | (_, Infini) -> true
+  | (Poids(p1'), Poids(p2')) -> (p1' < p2') ;;
+
+let echange t i j = let v = t.(j) in
+  t.(j) <- t.(i) ; t.(i) <- v ;;
+
+let remonte d t e k =
+  let i = ref k in
+    while (!i >= 1) && (comp (d.(!i)) (d.(!i / 2))) do
+      echange e (t.(!i)) (t.(!i / 2));
+      echange t !i (!i / 2);
+      i := !i / 2
+    done;;
+
+let descente d t e k =
+  let i = ref k in
+    let pmin = ref(
+      if (!i * 2) <= t.(0) then begin
+        if (!i * 2) < t.(0) then begin
+          if comp (d.(!i * 2)) (d.(!i * 2 + 1)) then (!i * 2)
+          else (!i * 2 + 1)
+        end
+        else -1
+      end
+      else -1) in
+        while (2*(!pmin) <= t.(0)) && (comp (d.(!i)) (d.(!pmin))) do
+          echange e (t.(!i)) (t.(!pmin));
+          echange t !i (!pmin);
+          i := !pmin;
+          pmin := if (!i * 2) <= t.(0) then begin
+            if (!i * 2) < t.(0) then begin
+              if comp (d.(!i * 2)) (d.(!i * 2 + 1)) then (!i * 2)
+              else (!i * 2 + 1)
+            end
+            else -1
+          end
+          else -1
+        done;;
+
+let ajoute d t e v = t.(0) <- (t.(0) + 1); e.(v) <- t.(0);
+  t.(t.(0)) <- v; remonte d t e (t.(0));;
+
+let sortir d t e = echange t 1 t.(0); echange e 1 t.(0);
+  descente d t e 1; t.(0) <- t.(0) - 1;;
+
+let dijkstra g m

@@ -1,0 +1,56 @@
+let rec flat m = match m with
+  |[] -> []
+  |t :: q -> t@(flat q);;
+
+let rec intervalle a b =
+  if a>b then []
+    else a::intervalle (a+1) b;;
+
+let liste_of_bande h g d m =
+  let l = (intervalle g d) in
+    let rec aux l1 = match l1 with
+      | [] -> []
+      | t::q -> m.(h).(t)::aux q
+    in aux l;;
+
+let rec liste_of_zone h b g d m = let l = ref [] in
+  for i=h to b do
+    l := (liste_of_bande i g d m)::!l;
+  done; (flat !l);;
+
+let liste_of_bloc k m =
+  liste_of_zone (3*(k/3)) (3*(k/3)+3) (3*(k mod 3)) (3*(k mod 3)+3) m;;
+
+let rec insertion x l = match l with
+  |[] -> [x]
+  |t::q when(x<=t) -> x::l
+  |t::q -> t::(insertion x q);;
+
+let rec tri_insertion l = match l with
+  |[] -> []
+  |t::q -> insertion t (tri_insertion q);;
+
+let bonne_liste l =
+  let l_triee = tri_insertion l in
+  let rec test l acc = match l with
+    |[] -> true
+    |t::q when(t=acc) -> test q (acc+1)
+    |_ -> false
+  in
+    if List.length l_triee = 9 then
+      test l_triee 1
+      else false;;
+
+let bon_sudoku m = let flag = ref true in
+  for i=0 to 8 do
+    flag := (!flag)&&(bonne_liste (liste_of_bloc i m));
+    flag := (!flag)&&(bonne_liste (liste_of_bande i 0 8 m));
+    flag := (!flag)&&(bonne_liste (liste_of_zone 0 8 i i m));
+  done;
+  !flag;;
+
+let m = Array.make_matrix 9 9 0;;
+liste_of_bande 2 2 4 m;;
+liste_of_zone 2 4 2 4 m;;
+
+bonne_liste [1; 2; 3; 4; 5; 6; 7; 8];;

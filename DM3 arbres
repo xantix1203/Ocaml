@@ -1,0 +1,22 @@
+type couleur = Rouge | Noir;;
+type bicolore = Nil | Noeud of couleur * int * bicolore * bicolore;;
+
+let rec hauteur_noire a = match a with
+  |Nil -> 0
+  |Noeud(Rouge, x, fg, fd) -> (hauteur_noire fg) + (hauteur_noire fd)
+  |Noeud(Noir, x, fg, fd) -> 1 + (hauteur_noire fg) + (hauteur_noire fd);;
+
+
+let color a = match a with
+  | Noeud(Rouge,_,_,_) -> Rouge
+  | _ -> Noir ;;
+  
+
+let est_rouge_noir a =
+  let rec aux a acc acc2  = match a with
+  | Noeud(Rouge, _, _, _) when(acc=0) -> False
+  | Noeud(Noir, _, fg, fd) when(acc=0) -> ((aux fg 1) = (aux fd 1))
+  | Noeud(Rouge, _, fg, fd) ->  aux
+
+let arbre = Noeud(Noir, 3, Noeud(Rouge, 2, Nil, Nil), Noeud(Rouge, 2, Nil, Nil));;
+hauteur_noire arbre ;;

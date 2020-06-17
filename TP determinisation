@@ -1,0 +1,158 @@
+type charautomate = { mutable taille : int ; mutable initial : int ;
+                        transitions : (char * int) list array ;
+                        final : bool array } ;;
+
+open Stack;;
+
+let calcul_det w a = let q = ref 0 in
+  let flag = ref true in
+  for i = 0 to (String.length w - 1) do
+    try
+      q := List.assoc (w.[i]) (a.transitions.(!q))
+    with _ -> flag := false;
+  done; !flag && a.final.(!q);;
+
+let complete a = let transitions2 = Array.make (a.taille + 1) [] in
+  let final2 = Array.make (a.taille + 1) false in
+    for i = 0 to (a.taille - 1) do
+      (match a.transitions.(i) with
+        | [] -> transitions2.(i) <- [('a', a.taille); ('b', a.taille)]
+        | [('a', x)] -> transitions2.(i) <- [('a', x); ('b', a.taille)]
+        | [('b', x)] -> transitions2.(i) <- [('b', x); ('a', a.taille)]
+        | l -> (transitions2.(i) <- l));
+      final2.(i) <- a.final.(i);
+    done;
+    transitions2.(a.taille) <- [('a', a.taille); ('b', a.taille)];
+    final2.(a.taille) <- false;
+    {taille = a.taille + 1;
+      initial = 0;
+      transitions = transitions2;
+      final = final2};;
+
+let rec in_list x l = match l with
+  | t::q -> (t = x)||(in_list x q)
+  | _ -> false;;
+
+let hachage l maxi = let longueur = List.length l in
+  let t_hachage = Array.make (maxi + 1) 0 in
+    let rec aux acc l2 = match l2 with
+      | [] -> t_hachage
+      | t::q -> (t_hachage.(t) <- acc); aux (acc - 1) q
+    in aux (longueur - 1) l;;
+
+let rec new_transition t tab = match t with
+  |[] -> []
+  |(x, y)::q -> (x, tab.(y))::(new_transition q tab);;
+
+let accessible a = let l_to_see = Stack.create() in
+  Stack.push a.initial l_to_see; let l_seen = ref [] in
+  while not(Stack.is_empty l_to_see) do
+    let e = Stack.pop l_to_see in
+      if not(in_list e !l_seen) then begin
+        l_seen := e::!l_seen;
+        let rec empile l = match l with
+          | [] -> ()
+          | (_, t)::q -> Stack.push t l_to_see
+        in empile a.transitions.(e); end;
+  done;
+  let taille2 = List.length !l_seen in
+    let transitions2 = Array.make taille2 [] in
+      let final2 = Array.make taille2 false in
+        let t_hachage = hachage !l_seen (a.taille - 1) in
+  let rec aux l = match l with
+    | [] -> ()
+    | t::q -> (transitions2.(t_hachage.(t)) <- new_transition a.transitions.(t) t_hachage);
+              final2.(t_hachage.(t)) <- a.final.(t);
+              aux q
+  in aux !l_seen;
+  {taille = taille2;
+    initial = a.initial;
+    transitions = transitions2;
+    final = final2};;
+
+let rec mon_assoc x l = match l with
+  |[] -> []
+  | (t, y)::q when (t = x) -> y::(mon_assoc x q)
+  | t::q -> mon_assoc x q;;
+
+let calcul_nondet w a = let q = ref [0] in
+  let flag = ref true in
+  let rec all_transitions l = match l with
+    |[] -> []
+    |t::q -> a.transitions.(t) @ (all_transitions q)
+  in
+  for i = 0 to (String.length w - 1) do
+    try
+      q := mon_assoc (w.[i]) (all_transitions !q)
+    with _ -> flag := false;
+  done;
+  let rec test l = match l with
+    | [] -> false
+    | t::q -> a.final.(t)||(test q)
+  in  !flag && (test !q);;
+
+let tab_to_int t = let s = ref 0 in
+  for i = 0 to (Array.length t - 1) do
+    if t.(i) then
+    s := !s + int_of_float (2. ** float_of_int i);
+  done; !s;;
+
+let int_to_tab x = let k = ref 0 in let x_ref = ref x in
+  while int_of_float (2. ** float_of_int (!k + 1)) < x do
+    k := !k + 1;
+  done;
+  let t = Array.make (!k + 1) false in
+    t.(!k) <- true; x_ref := !x_ref - (int_of_float (2. ** float_of_int !k));
+    while !x_ref > 0 && !k >= 0 do
+      if int_of_float (2. ** float_of_int !k) <= !x_ref then begin
+        x_ref := !x_ref - int_of_float (2. ** float_of_int !k);
+        t.(!k) <- true; end;
+      k := !k - 1;
+    done; t;;
+
+let rec puiss2 n = match n with
+  | 1 -> 2
+  | x when(n mod 2 = 0) -> int_of_float (float_of_int (puiss2 (n/2)) ** 2.)
+  | _ -> 2 * int_of_float (float_of_int (puiss2 (n/2)) ** 2.);;
+
+let int_non_vide t1 t2 = let flag = ref false in
+  for i = 0 to (Array.length t1 - 1) do
+    flag := !flag||(t1.(i) && t2.(i));
+  done; !flag;;
+
+let automate0 = {taille = 5; initial = 0;
+            transitions =[|[('a', 1); ('b', 2)]; [('a', 1); ('b', 2)];
+            [('a', 3); ('b', 4)]; [('a', 2); ('b', 4)];
+            [('a', 3); ('b', 2)]|];
+          final = [|false; true; false; true; false|]};;
+
+let automate1 = {taille = 5; initial = 0;
+            transitions =[|[('a', 1); ('b', 2)]; [('a', 1)];
+            [('a', 3); ('b', 4)]; [('b', 4)];
+            [('a', 3)]|];
+          final = [|false; true; false; true; false|]};;
+
+let automate2 = {taille = 7; initial = 0;
+            transitions =[|[('b', 2)]; [('a', 1); ('b', 0)];
+                          [('b', 4)]; [('a', 2); ('b', 4)];
+                          [('a', 3)]; [('a', 6); ('b', 5)];
+                          [('a', 3); ('b', 1)]|];
+          final = [|false; true; false; true; false; false; true|]};;
+
+let automate3 = {taille = 5; initial = 0;
+            transitions =[|[('b', 2); ('a', 2); ('a', 1)]; [('a', 1)];
+                          [('a', 3); ('b', 4)]; [('b', 4)];
+                          [('a', 3)]|];
+          final = [|false; true; false; true; false|]};;
+
+calcul_complet "aba" automate1;;
+complete automate1;;
+accessible automate2;;
+calcul_nondet "bab" automate3;;
+tab_to_int [|true; false; true; true|];;
+int_to_tab 13;;
+puiss2 3;;
+int_non_vide [|true; false; false; false|] [|true; false; true; true|];;
+
+let p = Stack.create() in
+Stack.push 3 p;;

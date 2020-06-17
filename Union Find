@@ -1,0 +1,43 @@
+type partition = (int * int) array;;
+type voisin = int list ;;
+type graphe = voisin array ;;
+
+let init n = let tab = Array.make n (0,0) in
+  for i = 0 to (n - 1) do
+    tab.(i) <- (i,0);
+  done;
+  tab;;
+
+let rec find p n = match p.(n) with
+  |(a, _) when(a = n) -> n
+  |(x, y) -> let r = find p x in
+              p.(n) <- (r, y) ; r;;
+
+let union p a b =
+  let (r1, r2) = ((find p a), find p b) in
+    if not (r1 = r2) then begin
+      let (rg1, rg2) = (snd(p.(r1)), snd(p.(r2))) in
+        if rg1 > rg2 then
+          p.(r2) <- (r1, rg2)
+        else begin
+          p.(r1) <- (r2, rg1);
+          p.(r2) <- (r2, rg2 + 1);
+        end;
+    end;;
+
+let composantes g =
+  let t = Array.length g in
+    let p = init t in
+      for i = 0 to (t - 1) do
+        let rec aux l n = match l with
+          |[] -> ()
+          |[x] -> union p x i
+          |t::q -> union p t i; aux q (n + 1)
+        in aux (g.(i)) 0;
+      done;
+      p;;
+
+
+
+
+find (init 10) 9;;

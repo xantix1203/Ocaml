@@ -1,0 +1,45 @@
+let rec list_map f l = match l with
+  | [] -> []
+  | t::q -> f t ::list_map f q;;
+
+let rec list_select p l = match l with
+  | [] -> []
+  | t::q when(p t) -> t::list_select p q
+  | t::q -> list_select p q;;
+
+let rec insere x l = match l with
+  | [] -> [x]
+  | t::q when (x <= t) -> x::l
+  | t::q -> t::(insere x l);;
+
+let rec tri_insertion l = match l with
+  | [] -> []
+  | t::q -> insere t (tri_insertion q);;
+
+let rec tri_rapide l =
+  let rec decoupe pivot l0 = match l0 with
+    | [] -> [], []
+    | t::q -> let l1, l2 = decoupe pivot q in
+                if t < pivot then (t::l1, l2)
+                  else (l1, t::l2)
+  in match l with
+    | [] -> []
+    | t::q -> let l1, l2 = decoupe t q in
+                (tri_rapide l1)@(t::tri_rapide l2);;
+
+let list_rev l =
+  let rec aux acc l0 = match l0 with
+    | [] -> acc
+    | t::q -> aux (t::acc) q
+  in aux [] l ;;
+
+
+let rec puissance x n = match n with
+  | 1 -> x
+  | _ -> let y = puissance x (n/2) in
+            if n mod 2 = 0 then y * y
+              else x * y * y;;
+
+let rec pgcd a b = match a with
+  | 0 -> a
+  | _ -> pgcd b (b mod a);;
